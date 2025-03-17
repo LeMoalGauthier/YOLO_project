@@ -22,7 +22,6 @@ class PongEnv(gym.Env):
         self.score_player_1 = 0
         self.score_player_2 = 0
 
-
         # Définition des actions : 0 = rien, 1 = haut et 2 = bas
         self.action_space = spaces.Discrete(3)
         self.observation_space = spaces.Box(
@@ -140,10 +139,10 @@ class PongEnv(gym.Env):
         """Détecte les touches pressées pour bouger la raquette."""
         keys = pg.key.get_pressed()
         if keys[pg.K_s] or keys[pg.K_DOWN]:
-            if self.paddle_player_y < self.HEIGHT - self.paddle_height -10:
+            if self.paddle_player_y < self.HEIGHT - self.paddle_height:
                 self.paddle_player_y += self.paddle_speed
         if keys[pg.K_z] or keys[pg.K_UP]:
-            if self.paddle_player_x > -10:
+            if self.paddle_player_x > 0:
                 self.paddle_player_y -= self.paddle_speed
 
     def check_event(self):

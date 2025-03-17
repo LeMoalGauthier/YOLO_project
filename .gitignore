@@ -1,3 +1,5 @@
 yolo11n-pose.pt
 .ipynb_checkpoints/
 pong/*.zip
+__pycache__/
+Tetris/
