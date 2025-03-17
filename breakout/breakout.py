@@ -5,7 +5,6 @@ from collections import deque
 import threading
 import cv2
 import mediapipe as mp
-from enum import Enum
 
 BLOC_WIDTH = 61
 BLOC_HEIGHT = 20 

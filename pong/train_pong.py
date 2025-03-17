@@ -4,7 +4,7 @@ import torch.optim as optim
 import random
 import numpy as np
 from collections import deque
-from pong import PongEnv  # Assurez-vous d'utiliser la version corrigée
+from pong_env import PongEnv  # Assurez-vous d'utiliser la version corrigée
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

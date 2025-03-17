@@ -1,6 +1,8 @@
 import pygame
 import pygame_gui
 from PIL import Image, ImageSequence
+from breakout.breakout import BreakOut
+from pong.pong import Pong
 
 class Menu:
     def __init__(self, WIDTH: int = 800, HEIGHT: int = 600):
@@ -36,18 +38,24 @@ class Menu:
 
     def add_buttons(self):
         # Buttons
-        self.start_button = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((300, 250), (200, 50)),
-            text='Show Games',
+        self.pong_button = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect((300, 320), (200, 50)),
+            text='Pong',
+            manager=self.manager
+        )
+
+        self.breakout_button = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect((300, 390), (200, 50)),
+            text='Breakout',
             manager=self.manager
         )
         self.settings_button = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((300, 320), (200, 50)),
+            relative_rect=pygame.Rect((300, 460), (200, 50)),
             text="Settings",
             manager=self.manager
         )
         self.quit_button = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((300, 390), (200, 50)),
+            relative_rect=pygame.Rect((300, 530), (200, 50)),
             text='Quit',
             manager=self.manager
         )
@@ -69,10 +77,17 @@ class Menu:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                
                 if event.type == pygame_gui.UI_BUTTON_PRESSED:
-                    if event.ui_element == self.start_button:
-                        print("Game Started")
+                    if event.ui_element == self.pong_button:
+                        running = False
+                        print("Pong is starting !")
+                        game = Pong(grid=False)
+                        game.run()
+                    if event.ui_element == self.breakout_button:
+                        running = False
+                        print("BreakOut is starting !")
+                        game = BreakOut(control="hands", ball_speed=3)
+                        game.run()
                     elif event.ui_element == self.quit_button:
                         running = False
                 

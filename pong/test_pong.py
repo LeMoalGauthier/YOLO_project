@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from pong import PongEnv
+from pong_env import PongEnv
 from train_pong import DQN
 
 def select_action(state):
