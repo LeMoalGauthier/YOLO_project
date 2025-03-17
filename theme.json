@@ -1,10 +1,11 @@
 {
     "button": {
         "colours": {
-            "normal_bg": "#141414",
-            "hovered_bg": "#00FFFF",
-            "disabled_bg": "#444444",
-            "selected_bg": "#00FF00"
+            "normal_bg": "#F86A06",
+            "hovered_bg": "#654D38",
+            "disabled_bg": "#1C1C1C",
+            "selected_bg": "#00FF00",
+            "normal_text": "#FFFFFF"
         },
         "font": {
             "name": "Arial",

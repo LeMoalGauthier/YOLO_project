@@ -1,22 +1,24 @@
-import gym
 import pygame as pg
 import numpy as np
 import sys
-from gym import spaces
+from collections import deque
+import threading
+import cv2
+import mediapipe as mp
+from enum import Enum
 
 BLOC_WIDTH = 61
 BLOC_HEIGHT = 20 
 
-class BreakOut(gym.Env):
-    def __init__(self, WIDTH: int = 1280, HEIGHT: int = 720, rows = 3, ball_speed = 7):
-        super(BreakOut, self).__init__()
+class BreakOut:
+    def __init__(self, WIDTH: int = 1280, HEIGHT: int = 720, rows = 3, ball_speed = 7, control:str="keyboard"):
         pg.init()
         self.clock = pg.time.Clock()
         self.WIDTH = WIDTH
         self.HEIGHT = HEIGHT
 
         self.ball_radius = 6
-        self.paddle_width = 112
+        self.paddle_width = 180
         self.paddle_height = 18
         self.paddle_speed = 10
 
@@ -28,6 +30,7 @@ class BreakOut(gym.Env):
         self.ball_speed = ball_speed
 
         self.screen = pg.display.set_mode((self.WIDTH, self.HEIGHT))
+        self.control_type = control
 
         self.score_player = 0
         self.life = 3
@@ -40,14 +43,11 @@ class BreakOut(gym.Env):
         self.need_redraw = True
 
         # Définition des actions : 0 = rien, 1 = haut et 2 = bas
-        self.action_space = spaces.Discrete(18)
-        self.low = np.zeros((self.WIDTH, self.HEIGHT, 3))
-        self.high = np.zeros((self.WIDTH, self.HEIGHT, 3))
-        self.high.fill(255)
-        self.observation_space = spaces.Box(
-            low = self.low,
-            high = self.high)
-        
+        self.hand_translation = "immobile"
+        self.hand_positions = deque(maxlen=10)
+        self.hand_thread = None
+        self.running = True
+
         self.load_assets()
         self.reset()
 
@@ -65,13 +65,56 @@ class BreakOut(gym.Env):
         # Charger le spritesheet une seule fois
         self.block_spritesheet = pg.image.load("breakout/BasicBreakOutAssetPack/blocks.png").convert_alpha()
 
-    def control(self):
+
+    def start_hand_tracking(self):
+        """Démarrer le tracking de main dans un thread séparé"""
+        mp_hands = mp.solutions.hands
+        mp_drawing = mp.solutions.drawing_utils
+        def hand_tracking_loop():
+            cap = cv2.VideoCapture(1)
+            hands = mp_hands.Hands(static_image_mode=False, max_num_hands=1, min_detection_confidence=0.7)
+            
+            while self.running:
+                ret, frame = cap.read()
+                if not ret:
+                    continue
+                
+                results = hands.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+                
+                if results.multi_hand_landmarks:
+                    hand_landmarks = results.multi_hand_landmarks[0]
+                    wrist_x = hand_landmarks.landmark[mp_hands.HandLandmark.WRIST].x * frame.shape[1]
+                    self.hand_positions.append(wrist_x)
+                    
+                    if len(self.hand_positions) > 1:
+                        delta = self.hand_positions[-1] - self.hand_positions[0]
+                        if delta < -25:
+                            self.hand_translation = "right"
+                        elif delta > 25:
+                            self.hand_translation = "left"
+                        else:
+                            self.hand_translation = "immobile"
+            cap.release()
+
+        self.hand_thread = threading.Thread(target=hand_tracking_loop)
+        self.hand_thread.start()
+    
+    def control_keyboard(self):
         """Détecte les touches pressées pour bouger la raquette."""
         keys = pg.key.get_pressed()
         if keys[pg.K_d] or keys[pg.K_RIGHT]:
             if self.paddle_player_x < self.WIDTH - self.paddle_width:
                 self.paddle_player_x += self.paddle_speed
         if keys[pg.K_s] or keys[pg.K_LEFT]:
+            if self.paddle_player_x > 0:
+                self.paddle_player_x -= self.paddle_speed
+
+    def control_hand(self):
+        """Modifier la méthode de contrôle pour utiliser le tracking de main"""
+        if self.hand_translation == "right":
+            if self.paddle_player_x < self.WIDTH - self.paddle_width:
+                self.paddle_player_x += self.paddle_speed
+        elif self.hand_translation == "left":
             if self.paddle_player_x > 0:
                 self.paddle_player_x -= self.paddle_speed
 
@@ -161,23 +204,6 @@ class BreakOut(gym.Env):
                 self.ball_dy = -self.ball_dy
                 break  # Pour éviter de traiter plusieurs collisions en une frame
 
-    def step(self, action):
-        """Exécute une action"""
-        reward = 0
-        done = False
-
-        if action == 1 and self.paddle_player_x > 0:
-                self.paddle_player_x -= self.paddle_speed
-        
-        elif action == 2 and self.paddle_player_x < self.WIDTH - self.paddle_width:
-                self.paddle_player_x += self.paddle_speed
-
-        self.update_ball()
-
-        if self.ball_y >= self.HEIGHT:
-            reward -= 2 
-            done = True
-
     def render(self):
         # Efface complètement l'écran avant de dessiner
         self.screen.blit(self.background, (0, 0))
@@ -195,15 +221,24 @@ class BreakOut(gym.Env):
 
 
     def run(self):
-        while True:
-            start_time = pg.time.get_ticks()
-            self.check_event()
-            self.control()
-            self.update_ball()
-            self.check_life()
-            self.update_score()
-            self.render()
-            print(f"Frame time: {pg.time.get_ticks() - start_time}ms")
+        self.start_hand_tracking()
+        try:
+            while True:
+                start_time = pg.time.get_ticks()
+                self.check_event()
+                if self.control_type == "hands":
+                    self.control_hand()
+                else:
+                    self.control_keyboard()
+                self.update_ball()
+                self.check_life()
+                self.update_score()
+                self.render()
+                print(f"Frame time: {pg.time.get_ticks() - start_time}ms")
+        finally:
+            self.running = False
+            if self.hand_thread:
+                self.hand_thread.join()
     
     def close(self):
         """Ferme la fenêtre."""
@@ -245,5 +280,5 @@ class Bloc:
         return f"x: {self.pos_x}\ty: {self.pos_y}\tlife: {self.life}"
 
 if __name__ == '__main__':
-    env = BreakOut()
+    env = BreakOut(control="hands", ball_speed=3)
     env.run()
