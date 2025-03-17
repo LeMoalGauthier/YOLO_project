@@ -1,0 +1,18 @@
+{
+    "button": {
+        "colours": {
+            "normal_bg": "#141414",
+            "hovered_bg": "#00FFFF",
+            "disabled_bg": "#444444",
+            "selected_bg": "#00FF00"
+        },
+        "font": {
+            "name": "Arial",
+            "size": 30
+        },
+        "misc": {
+            "shape": "rectangle",
+            "shadow_width": 4
+        }
+    }
+}
