@@ -54,7 +54,7 @@ def detect_hand_translation(current_x, prev_x, threshold=5):
         return "left"
     return "immobile"
 
-def main(camera_source=1):
+def main(camera_source=0):
     hands = mp_hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.5)
     cap = initialize_camera(camera_source)
     prev_positions = {"left": None, "right": None}

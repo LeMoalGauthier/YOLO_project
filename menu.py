@@ -3,6 +3,7 @@ import pygame_gui
 from PIL import Image, ImageSequence
 from breakout.breakout import BreakOut
 from pong.pong import Pong
+import subprocess
 
 class Menu:
     def __init__(self, WIDTH: int = 800, HEIGHT: int = 600):
@@ -39,14 +40,18 @@ class Menu:
     def add_buttons(self):
         # Buttons
         self.pong_button = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((300, 320), (200, 50)),
+            relative_rect=pygame.Rect((300, 250), (200, 50)),
             text='Pong',
             manager=self.manager
         )
-
         self.breakout_button = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((300, 390), (200, 50)),
+            relative_rect=pygame.Rect((300, 320), (200, 50)),
             text='Breakout',
+            manager=self.manager
+        )
+        self.motus = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect((300, 390), (200, 50)),
+            text='Motus',
             manager=self.manager
         )
         self.settings_button = pygame_gui.elements.UIButton(
@@ -88,6 +93,10 @@ class Menu:
                         print("BreakOut is starting !")
                         game = BreakOut(control="hands", ball_speed=3)
                         game.run()
+                    if event.ui_element == self.motus:
+                        running = False
+                        print("Motus is starting !")
+                        subprocess.Popen(['python', './motus/motus.py'])
                     elif event.ui_element == self.quit_button:
                         running = False
                 
